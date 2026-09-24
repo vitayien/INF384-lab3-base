@@ -194,6 +194,10 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
+      # Requerido: Inicializar el entorno en el nuevo runner
+      - name: Inicializar Terraform
+        run: terraform init -backend-config=backend.hcl
+
       - name: Descargar artefactos del plan guardado
         uses: actions/download-artifact@v4
         with:
