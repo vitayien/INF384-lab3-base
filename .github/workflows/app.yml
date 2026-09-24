@@ -154,7 +154,7 @@ jobs:
   # Sustituir el paso centinela por la implementacion.
   estatico:
     runs-on: ubuntu-latest
-   steps:
+    steps:
       - name: Checkout del codigo
         uses: actions/checkout@v4
 
