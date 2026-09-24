@@ -205,13 +205,53 @@ jobs:
   #
   # Sustituir el paso centinela por la implementacion.
   publicar:
+    needs: [pruebas, calidad, secretos, dependencias, estatico]
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build-push.outputs.digest }}
     steps:
-      - name: Sin implementar
-        run: |
-          echo "::error::El job 'publicar' no esta implementado."
-          exit 1
+      - name: Checkout del código
+        uses: actions/checkout@v4
 
+      - name: Autenticación en AWS ECR
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Iniciar sesión en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Construir y publicar imagen Docker
+        id: build-push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: inf384-lab3
+          IMAGE_TAG: ${{ github.sha }}
+          SHORT_SHA: ${{ github.sha }}
+        run: |
+          # Extraer los 7 primeros caracteres del commit SHA
+          TAG_SHA="${SHORT_SHA:0:7}"
+          
+          # Construir la imagen para linux/amd64 con los labels requeridos
+          docker build \
+            --platform linux/amd64 \
+            --label "org.opencontainers.image.title=${ECR_REPOSITORY}" \
+            --tag "${ECR_REGISTRY}/${ECR_REPOSITORY}:${TAG_SHA}" \
+            --tag "${ECR_REGISTRY}/${ECR_REPOSITORY}:prd" \
+            .
+
+          # Publicar ambos tags en el registro privado de ECR
+          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:${TAG_SHA}"
+          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:prd"
+
+          # Obtener el digest del tag SHA publicado y exponerlo como salida del step
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${ECR_REGISTRY}/${ECR_REPOSITORY}:${TAG_SHA}")
+          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
   # Este job viene completo y no se modifica.
   # Las estrategias de despliegue y la verificacion posterior son contenido
   # de la sesion 6. La pregunta de reflexion 2 pide leerlo.
