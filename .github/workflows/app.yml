@@ -86,11 +86,15 @@ jobs:
           name: cobertura
           path: coverage/
 
-      - name: Escaneo con SonarQube Cloud
-        uses: SonarSource/sonarqube-scan-action@v3
+      - name: Análisis de código con SonarCloud
+        uses: SonarSource/sonarcloud-github-action@v3.1.0 
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: "https://sonarcloud.io"
+        with:
+          args: >
+            -Dsonar.organization=${{ vars.SONAR_ORG }}
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
 
   # TODO
   # Buscar credenciales escritas en el codigo y en el historial del repositorio.
