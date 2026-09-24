@@ -31,7 +31,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   pruebas:
     runs-on: ubuntu-latest
     steps:
