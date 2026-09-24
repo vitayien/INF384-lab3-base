@@ -5,6 +5,8 @@
 # defecto 1: Se usa una version latest - se corrige por una version fija
 FROM public.ecr.aws/lambda/nodejs:20 AS Builder
 
+WORKDIR /build
+
 # defecto 2 Se copia todo - se corrige copiando solo el manifiesto y el lock para que optimice el cache
 COPY package.json package-lock.json ./
 
